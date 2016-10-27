@@ -25,8 +25,8 @@ String version_num = "METAR ESP Version 1.01b";
 // Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 Adafruit_ILI9341 tft = Adafruit_ILI9341(_CS, _DC);
 
-const char *ssid     = "SKY6D12C";
-const char *password = "WQSUBEPQ";
+const char *ssid     = "********";
+const char *password = "********";
 
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xF1, 0xED };
 
