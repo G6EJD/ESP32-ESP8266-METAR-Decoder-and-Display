@@ -9,14 +9,13 @@ String version_num = "METAR ESP Version 2.0";
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 
-#define _CS   D0 // D8 on ESP
-#define _DC   D8 // D4 on ESP
+#define _CS   D0 // D0 on ESP
+#define _DC   D8 // D8 on ESP
 #define _mosi D7 // D7 on ESP
 #define _sclk D5 // D5 on ESP
-#define _rst  01
-#define _miso 01
+#define _rst  01 // Not used
+#define _miso 01 // Not used
 
-// Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 Adafruit_ILI9341 tft = Adafruit_ILI9341(_CS, _DC);
 
 const char *ssid     = "********";
