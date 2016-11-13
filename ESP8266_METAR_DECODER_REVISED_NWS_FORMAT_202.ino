@@ -110,7 +110,7 @@ void GET_METAR(String station, String Name) { //client function to send/receive 
   client.stop();  // Stop client
   clear_screen(); // Clear screen
   display_item(265,230,"Connected",RED,1);
-  display_item(0,230,version_num,YELLOW,1);
+  display_item(0,230,version_num,GREEN,1);
   display_item(0,190,Name,YELLOW,2);
   tft.drawLine(0,185,320,185,YELLOW);
   display_item(0,210,metar,YELLOW,1);
