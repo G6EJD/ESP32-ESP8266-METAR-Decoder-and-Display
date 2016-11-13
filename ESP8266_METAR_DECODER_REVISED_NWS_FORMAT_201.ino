@@ -1,5 +1,6 @@
 // (C) D Bird 2016
-// METAR decoder and display for Arduino and an Adafruit 2.8" TFT Display
+// METAR decoder and display for ESP8266 and SPI 320x240 TFT Display
+// Now handles the US National Weather Service revised format
 //
 ////////////////////////////////////////////////////////////////////////////////////
 String version_num = "METAR ESP Version 2.01";
