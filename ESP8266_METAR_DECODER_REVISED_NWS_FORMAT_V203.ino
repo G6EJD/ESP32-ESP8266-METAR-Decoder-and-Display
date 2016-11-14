@@ -428,7 +428,7 @@ void display_metar(String metar) {
 String convert_clouds(String source) {
   String height  = source.substring(3,6);
   String cloud   = source.substring(0,3);
-  String warning = " ";
+  String warning = "";
   while (height.startsWith("0")) {height = height.substring(1);} // trim leading '0'
   if (source.endsWith("TCU") || source.endsWith("CB")) {
     display_item(0,95,"Warning - storm clouds detected",WHITE,1);
