@@ -55,6 +55,9 @@ void setup(){
 }
 
 void loop(){
+  // Change these METAR Stations to suit your needs see: Use this URL address = ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/ 
+  // to establish your list of sites to retrieve (you must know the 4-letter 
+  // site dentification)
   GET_METAR("EGGD", "1 EGGD Bristol/Lulsgate");
   GET_METAR("EGVN", "2 EGVN Brize Norton");
   GET_METAR("EGCC", "3 EGCC Manchester Airport");
