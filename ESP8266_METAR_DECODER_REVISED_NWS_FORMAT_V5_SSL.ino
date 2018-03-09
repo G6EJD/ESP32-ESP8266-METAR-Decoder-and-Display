@@ -1,4 +1,4 @@
-/*  Version 4 METAR Decoder and display for ESp8266/ESP32 and ILI9341 TFT screen
+/*  Version 5 METAR Decoder and display for ESP8266/ESP32 and ILI9341 TFT screen
  *   
  This software, the ideas and concepts is Copyright (c) David Bird 2018. All rights to this software are reserved.
  
@@ -19,7 +19,7 @@
  *
 */
 ////////////////////////////////////////////////////////////////////////////////////
-String version_num = "METAR ESP Version 4.00";
+String version_num = "METAR ESP Version 5.0";
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include "SPI.h"
