@@ -32,6 +32,7 @@ String version_num = "METAR ESP Version 6.0";
   //      5v       // Goes to TFT Vcc
   //      Gnd      // Goes to TFT Gnd
 #else
+  // YOU MUST DOWNGRADE YOUR IDE to 2.4.2 for this to work on the ESP8266
   #include <ESP8266WiFi.h>
   #define CS   D0 // Wemos D1 Mini D0 goes to TFT CS
   #define DC   D8 // Wemos D1 Mini D8 goes to TFT DC
