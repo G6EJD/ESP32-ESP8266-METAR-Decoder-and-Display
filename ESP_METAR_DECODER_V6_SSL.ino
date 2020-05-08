@@ -332,34 +332,41 @@ void display_metar(String metar) {
 //----------------------------------------------------------------------------------------------------
 // Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
     tft.drawLine(0,40,229,40,YELLOW);
-    // BLOCK-1 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
-    if (valid_cloud_report(temp_strA) || temp_strA.startsWith("VV/")) {
-      temp_strA = convert_clouds(temp_strA); 
-      display_item(0,45,temp_strA,WHITE,1);
-      temp_strA = strtok(NULL," ");
+    if (temp_strA == "////" || temp_strA == "/////" || temp_strA == "//////")  {
+      temp_strA = "No CC Rep.";
+      temp_strA = strtok(NULL, " ");
     }
+    else
+    {
+      // BLOCK-1 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
+      if (valid_cloud_report(temp_strA) || temp_strA.startsWith("VV/")) {
+        temp_strA = convert_clouds(temp_strA);
+        display_item(0, 45, temp_strA, WHITE, 1);
+        temp_strA = strtok(NULL, " ");
+      }
 
-    // BLOCK-2 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
-    if (valid_cloud_report(temp_strA)) {
-      temp_strA = convert_clouds(temp_strA); 
-      display_item(0,55,temp_strA,WHITE,1);
-      temp_strA = strtok(NULL," ");
-    }
+      // BLOCK-2 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
+      if (valid_cloud_report(temp_strA)) {
+        temp_strA = convert_clouds(temp_strA);
+        display_item(0, 55, temp_strA, WHITE, 1);
+        temp_strA = strtok(NULL, " ");
+      }
 
-    // BLOCK-3 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
-    if (valid_cloud_report(temp_strA)) {
-      temp_strA = convert_clouds(temp_strA); 
-      display_item(0,65,temp_strA,WHITE,1);
-      temp_strA = strtok(NULL," ");
-    }
-    
-    // BLOCK-4 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
-    if (valid_cloud_report(temp_strA)) {
-      temp_strA = convert_clouds(temp_strA); 
-      display_item(0,75,temp_strA,WHITE,1);
-      temp_strA = strtok(NULL," ");
-    }
+      // BLOCK-3 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
+      if (valid_cloud_report(temp_strA)) {
+        temp_strA = convert_clouds(temp_strA);
+        display_item(0, 65, temp_strA, WHITE, 1);
+        temp_strA = strtok(NULL, " ");
+      }
 
+      // BLOCK-4 Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
+      if (valid_cloud_report(temp_strA)) {
+        temp_strA = convert_clouds(temp_strA);
+        display_item(0, 75, temp_strA, WHITE, 1);
+        temp_strA = strtok(NULL, " ");
+      }
+    }
+   
 //----------------------------------------------------------------------------------------------------
 // Process any reported temperatures e.g. 14/12 means Temp 14C Dewpoint 12
     // Test first section of temperature/dewpoint which is 'temperature' so either 12/nn or M12/Mnn
