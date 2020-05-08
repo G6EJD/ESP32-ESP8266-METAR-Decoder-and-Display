@@ -19,7 +19,7 @@
  *
 */
 ////////////////////////////////////////////////////////////////////////////////////
-String version_num = "METAR ESP Version 6.0";
+String version_num = "METAR ESP Version 6.1";
 #ifdef ESP32
   #include <WiFi.h>
   #define CS   17  // ESP32 GPIO 17 goes to TFT CS
