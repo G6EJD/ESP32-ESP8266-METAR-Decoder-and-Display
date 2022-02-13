@@ -22,6 +22,7 @@
 String version_num = "METAR ESP Version 7.0";
 #ifdef ESP32
 #include <WiFi.h>
+#include "HTTPClient.h"
 #define CS   17  // ESP32 GPIO 17 goes to TFT CS
 #define DC   16  // ESP32 GPIO 16 goes to TFT DC
 #define MOSI 23  // ESP32 GPIO 23 goes to TFT MOSI
@@ -33,6 +34,7 @@ String version_num = "METAR ESP Version 7.0";
 //      Gnd      // Goes to TFT Gnd
 #else
 #include <ESP8266WiFi.h>
+#include "ESP8266HTTPClient.h"
 #define CS   D0 // Wemos D1 Mini D0 goes to TFT CS
 #define DC   D8 // Wemos D1 Mini D8 goes to TFT DC
 #define MOSI D7 // Wemos D1 Mini D7 goes to TFT MOSI
@@ -45,7 +47,6 @@ String version_num = "METAR ESP Version 7.0";
 #endif
 
 #include <WiFiClientSecure.h>
-#include "HTTPClient.h"
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
