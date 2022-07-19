@@ -111,11 +111,12 @@ void GET_METAR(String Station, String Name) { //client function to send/receive 
   // http://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1 (example)
   // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
   // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
-  String uri = "/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=xml&mostRecentForEachStation=constraint&hoursBeforeNow=1.25&stationString=" + Station;
-  Serial.println("Connected, \nRequesting data for : " + Name);
+  String uri = "https://aviationweather.gov/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=xml&mostRecentForEachStation=constraint&hoursBeforeNow=1.25&stationString=" + Station;
+  Serial.println("Connected, Requesting data for : " + Name);
   HTTPClient http;
-  http.begin(host + uri);    //Specify the URL and certificate
-  int httpCode = http.GET(); //  Start connection and send HTTP header
+  http.begin(uri.c_str());   // Specify the URL and maybe a certificate
+  int httpCode = http.GET(); // Start connection and send HTTP header
+  Serial.println("Connection status: " + String(httpCode > 0 ? "Connected": "Connection Error"));
   if (httpCode > 0) {        // HTTP header has been sent and Server response header has been handled
     if (httpCode == HTTP_CODE_OK) raw_metar = http.getString();
     http.end();
