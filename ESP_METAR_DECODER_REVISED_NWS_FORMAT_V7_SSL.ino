@@ -111,7 +111,7 @@ void GET_METAR(String Station, String Name) { //client function to send/receive 
   // http://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1 (example)
   // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
   // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
-  String uri = "https://aviationweather.gov/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=xml&mostRecentForEachStation=constraint&hoursBeforeNow=1.25&stationString=" + Station;
+  String uri = String(host) + "/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=xml&mostRecentForEachStation=constraint&hoursBeforeNow=1.25&stationString=" + Station;
   Serial.println("Connected, Requesting data for : " + Name);
   HTTPClient http;
   http.begin(uri.c_str());   // Specify the URL and maybe a certificate
