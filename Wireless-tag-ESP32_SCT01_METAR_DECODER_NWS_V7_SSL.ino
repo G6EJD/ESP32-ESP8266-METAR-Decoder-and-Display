@@ -185,12 +185,8 @@ void display_metar(String metar) {
     if (temp_strB == "MPS") {
       temp_strB = "MS";
     }
-    if (wind_speedMPH < 10) display_item((centreX - 28), (centreY + 50), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
-    else {
-      display_item((centreX - 35), (centreY + 70), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
-      if (wind_speedMPH >= 18)
-        display_item((centreX - 35), (centreY + 70), (String(wind_speedMPH) + " MPH"), RED, 2);
-    }
+    if (wind_speedMPH < 18) display_item((centreX - 28), (centreY + 70), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
+    else                    display_item((centreX - 35), (centreY + 70), (String(wind_speedMPH) + " MPH"), RED, 2);
     if (temp_strA.indexOf('G') >= 0) {
       lcd.fillRect((centreX - 40), (centreY + 68), 82, 18, BLACK);
       display_item((centreX - 40), (centreY + 70), String(wind_speedKTS) + "g" + temp_strA.substring(temp_strA.indexOf('G') + 1, temp_strA.indexOf('G') + 3) + temp_strB, YELLOW, 2);
@@ -214,8 +210,8 @@ void display_metar(String metar) {
       int endV   = temp_strA.substring(4, 7).toInt();
       // Minimum angle is either ABS(AngleA- AngleB) or (360-ABS(AngleA-AngleB))
       int veering = min_val(360 - abs(startV - endV), abs(startV - endV));
-      display_item((centreX - 207), (centreY + 60), "V" + String(veering) + char(247), RED, 2);
-      display_item((centreX - 60), (centreY + 70), "v", RED, 2); // Signify 'Variable wind direction
+      display_item((centreX - 207), (centreY + 65), "V" + String(veering) + char(247), RED, 2);
+      display_item((centreX - 60), (centreY + 65), "v", RED, 2); // Signify 'Variable wind direction
       draw_veering_arrow(startV);
       draw_veering_arrow(endV);
       temp_strA = strtok(NULL, " ");    // Move to the next token/item
