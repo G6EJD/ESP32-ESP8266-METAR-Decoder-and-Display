@@ -82,7 +82,8 @@ void GET_METAR(String station, String Name) { //client function to send/receive 
   // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
   // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
     display_item(265,230,"Connected",RED,1);
-    String url = "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString="+station+"&hoursBeforeNow=1";
+    String url = "/cgi-bin/data/metar.php?dataSource=metars&requestType=retrieve&format=xml&ids=" + station + "&hoursBeforeNow=1";
+    //String url = "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString="+station+"&hoursBeforeNow=1";
     Serial.println("Requesting data for : "+Name);
     client.print(String("GET ") + url + " HTTP/1.1\r\n" +
                "Host: " + host + "\r\n" +
