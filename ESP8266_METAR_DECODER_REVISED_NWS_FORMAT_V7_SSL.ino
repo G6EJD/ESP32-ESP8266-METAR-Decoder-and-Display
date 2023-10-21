@@ -127,9 +127,11 @@ void GET_METAR(String station, String Name) { //client function to send/receive 
   // http://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1 (example)
   // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
   // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=json&stationString=EGLL&hoursBeforeNow=1
+  // https://aviationweather.gov/cgi-bin/data/metar.php?datasource=metars&requestType=retrieve&ids=EGLL&hoursBeforeNow=1  
+  // https://aviationweather.gov/cgi-bin/data/metar.php?datasource=metars&requestType=retrieve&format=xml&hours=0&ids=EGLL
   // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
   display_item(265, 230, "Connected", RED, 1);
-  String url = "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=" + station + "&hoursBeforeNow=1";
+  String url = "/cgi-bin/data/metar.php?dataSource=metars&requestType=retrieve&format=xml&ids=" + station + "&hoursBeforeNow=1";
   client.print(String("GET ") + url + " HTTP/1.0\r\n" +
                "Host: " + host + "\r\n" +
                "Content-Type: text/html; charset=utf-8\r\n" +
