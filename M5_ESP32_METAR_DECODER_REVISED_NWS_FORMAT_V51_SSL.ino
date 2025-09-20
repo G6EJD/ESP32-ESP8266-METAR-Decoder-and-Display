@@ -84,7 +84,7 @@ void GET_METAR(String station, String Name) { //client function to send/receive 
  // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
  // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=EGLL&hoursBeforeNow=1
     const char* host = "https://aviationweather.gov";
-    String uri = String(host) + "/api/data/metar?format=xml&ids=" + station + "&hoursBeforeNow=1";
+    String url = String(host) + "/api/data/metar?format=xml&ids=" + station + "&hoursBeforeNow=1";
     Serial.println("Requesting data for : "+Name);
     client.print(String("GET ") + url + " HTTP/1.1\r\n" +
                "Host: " + host + "\r\n" +
@@ -729,5 +729,6 @@ void display_progress (String title, int percent) {
 <elevation_m>124.0</elevation_m>
 </METAR>
 */
+
 
 
