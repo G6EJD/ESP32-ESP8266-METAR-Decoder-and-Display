@@ -56,7 +56,6 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(CS, DC);
 
 const char *ssid      = "yourSSID";
 const char *password  = "yourPASSWORD";
-const char* host      = "https://aviationweather.gov";
 const int   httpsPort = 443;
 
 WiFiClientSecure client;
@@ -892,4 +891,5 @@ void display_progress (String title, int percent) {
   <elevation_m>124.0</elevation_m>
   </METAR>
 */
+
 
