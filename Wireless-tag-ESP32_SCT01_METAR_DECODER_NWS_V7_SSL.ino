@@ -99,7 +99,7 @@ void GET_METAR(String Station, String Name) { //client function to send/receive 
   String uri = String(host) + "/api/data/metar?format=xml&ids=" + station + "&hoursBeforeNow=1";
   Serial.println("Connected, \nRequesting data for : " + Name);
   HTTPClient http;
-  http.begin(host + uri);    // Specify the URL and certificate
+  http.begin(uri);    // Specify the URL and certificate
   int httpCode = http.GET(); // Start connection and send HTTP header
   if (httpCode > 0) {        // HTTP header has been sent and Server response header has been handled
     if (httpCode == HTTP_CODE_OK) raw_metar = http.getString();
@@ -842,4 +842,5 @@ void display_progress (String title, int percent) {
   <elevation_m>124.0</elevation_m>
   </METAR>
 */
+
 
