@@ -38,7 +38,6 @@ static LGFX lcd;                // LGFX
 
 const char *ssid      = "yourSSID";
 const char *password  = "yourPASSWORD";
-const char* host      = "https://aviationweather.gov";
 const int   httpsPort = 443;
 
 WiFiClientSecure client;
@@ -94,11 +93,10 @@ void GET_METAR(String Station, String Name) { //client function to send/receive 
   const int time_delay = 20000;
   display_item(35, 100, "Decoding METAR", GREEN, 3);
   display_item(90, 135, "for " + Station, GREEN, 3);
-  // http://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1 (example)
-  // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
-  // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
-  String uri = "/cgi-bin/data/metar.php?dataSource=metars&requestType=retrieve&format=xml&ids=" + station + "&hoursBeforeNow=1";
-  //String uri = "/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=xml&mostRecentForEachStation=constraint&hoursBeforeNow=1.25&stationString=" + Station;
+  // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
+  // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=EGLL&hoursBeforeNow=1
+  const char* host = "https://aviationweather.gov";
+  String uri = String(host) + "/api/data/metar?format=xml&ids=" + station + "&hoursBeforeNow=1";
   Serial.println("Connected, \nRequesting data for : " + Name);
   HTTPClient http;
   http.begin(host + uri);    // Specify the URL and certificate
@@ -844,3 +842,4 @@ void display_progress (String title, int percent) {
   <elevation_m>124.0</elevation_m>
   </METAR>
 */
+
