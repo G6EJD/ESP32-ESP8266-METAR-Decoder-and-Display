@@ -27,7 +27,6 @@ String version_num = "METAR ESP Version 5.1";
 
 const char *ssid      = "your_SSID";
 const char *password  = "your_PASSWORD";
-const char* host      = "aviationweather.gov";
 const int   httpsPort = 443;
 
 WiFiClientSecure client;
@@ -82,8 +81,10 @@ void GET_METAR(String station, String Name) { //client function to send/receive 
   // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
   // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
     display_item(265,230,"Connected",RED,1);
-    String url = "/cgi-bin/data/metar.php?dataSource=metars&requestType=retrieve&format=xml&ids=" + station + "&hoursBeforeNow=1";
-    //String url = "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString="+station+"&hoursBeforeNow=1";
+ // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
+ // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=EGLL&hoursBeforeNow=1
+    const char* host = "https://aviationweather.gov";
+    String uri = String(host) + "/api/data/metar?format=xml&ids=" + station + "&hoursBeforeNow=1";
     Serial.println("Requesting data for : "+Name);
     client.print(String("GET ") + url + " HTTP/1.1\r\n" +
                "Host: " + host + "\r\n" +
@@ -728,4 +729,5 @@ void display_progress (String title, int percent) {
 <elevation_m>124.0</elevation_m>
 </METAR>
 */
+
 
