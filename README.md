@@ -6,6 +6,8 @@ NOTE: the API has changed, now this code uses the JSON version of the API reques
 
 ESP_METAR_JSON_DECODER.ino
 
+See: https://aviationweather.gov/data/schema/openapi.yaml for detailed description of the API 
+
 
 
 
