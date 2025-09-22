@@ -1,6 +1,6 @@
 /*  Version 6 METAR Decoder and display for ESP8266/ESP32 and ILI9341 TFT screen
 
-  This software, the ideas and concepts is Copyright (c) David Bird 2018. All rights to this software are reserved.
+  This software, the ideas and concepts is Copyright (c) David Bird 2025. All rights to this software are reserved.
 
   Any redistribution or reproduction of any part or all of the contents in any form is prohibited other than the following:
   1. You may print or download to a local hard disk extracts for your personal and non-commercial use only.
@@ -891,5 +891,6 @@ void display_progress (String title, int percent) {
   <elevation_m>124.0</elevation_m>
   </METAR>
 */
+
 
 
