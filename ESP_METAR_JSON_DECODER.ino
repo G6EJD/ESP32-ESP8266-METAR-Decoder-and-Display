@@ -223,8 +223,21 @@ bool display_metar(String metar) {
   float Elevation = root_0["elev"];  // 26
   String VFR = root_0["fltCat"]; // light category restriction
   int QualityLevel = root_0["qcfield"];
-  String StationMode = "AUTO";
-  if (!RawMetar.indexOf("AUTO")) StationMode = "MANUAL";
+  String StationMode = "MANUAL";
+  if (RawMetar.indexOf("AUTO") >= 0) StationMode = "AUTO";
+  int winddir = 0;
+  if (WindDir.startsWith("VRB")) {
+    // Variable wind direction e.g. VRB3Kts
+    winddir = WindDir.substring(3).toInt();
+  } else winddir = WindDir.toInt();
+  // WindDir could also be 21010KT 180V240  if veering
+  String Veering = "";
+  int WindVeerStart, WindVeerEnd;
+  if (RawMetar.indexOf("V") > 15) Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4); // To avoid station names with a 'V' in them
+  if (Veering != "") {
+    WindVeerStart = Veering.substring(0, 3).toInt();
+    WindVeerEnd = Veering.substring(4, 7).toInt();
+  }
   //==================================================================
   // Print the received values
   Serial.println("Station Id               : " + StationId);
@@ -232,33 +245,37 @@ bool display_metar(String metar) {
   Serial.println("Time                     : " + ReceiptTime);
   Serial.println("Observation Time         : " + String(obsTime));
   Serial.println("Receipt Time             : " + ReceiptTime);
-  Serial.println("Temperature              : " + String(Temperature, 1)); // in Celcius
-  Serial.println("Maximum Temperature      : " + String(MaxTemp, 1)); // in Celcius
-  Serial.println("Minimum Temperature      : " + String(MinTemp, 1)); // in Celcius
-  Serial.println("Maximum 24hr Temperature : " + String(MaxTemp24, 1)); // in Celcius
-  Serial.println("Minimum 24hr Temperature : " + String(MinTemp24, 1)); // in Celcius
-  Serial.println("Dew Point                : " + String(DewPoint, 1)); // in Celcius
-  Serial.println("Wind Direction           : " + String(WindDir, 1));  // in degrees
-  Serial.println("Windspeed                : " + String(WindSpeed, 1));  // in knots
-  Serial.println("Wind Gust Speed          : " + String(WindGustSpeed, 1)); // in knots
-  Serial.println("Visibility               : " + String(Visibility));  // in statute Miles
-  Serial.println("Vertical Visibility      : " + String(VerticalVis)); // in statute Miles
-  Serial.println("Altimeter                : " + String(Altimeter)); //  // in hectopascals
-  Serial.println("Sea Level Pressure       : " + String(SeaLevelPressure, 1)); // in hectopascals
+  Serial.println("Temperature              : " + String(Temperature, 1));    // in Celcius
+  Serial.println("Maximum Temperature      : " + String(MaxTemp, 1));        // in Celcius
+  Serial.println("Minimum Temperature      : " + String(MinTemp, 1));        // in Celcius
+  Serial.println("Maximum 24hr Temperature : " + String(MaxTemp24, 1));      // in Celcius
+  Serial.println("Minimum 24hr Temperature : " + String(MinTemp24, 1));      // in Celcius
+  Serial.println("Dew Point                : " + String(DewPoint, 1));       // in Celcius
+  Serial.println("Wind Direction           : " + String(winddir));           // in degrees
+  if (Veering != ""){
+    Serial.println("Wind Veering Dir Start   : " + String(WindVeerStart));     // in degrees
+    Serial.println("Wind Veering Dir End     : " + String(WindVeerEnd));       // in degrees
+  }
+  Serial.println("Windspeed                : " + String(WindSpeed));         // in knots
+  Serial.println("Wind Gust Speed          : " + String(WindGustSpeed, 1));  // in knots
+  Serial.println("Visibility               : " + String(Visibility));           // in statute Miles
+  Serial.println("Vertical Visibility      : " + String(VerticalVis));          // in statute Miles
+  Serial.println("Altimeter                : " + String(Altimeter));            //  // in hectopascals
+  Serial.println("Sea Level Pressure       : " + String(SeaLevelPressure, 1));  // in hectopascals
   Serial.println("Weather report           : " + WxString);
   Serial.println("Quality                  : " + String(QualityLevel));
-  Serial.println("Pressure Tendency        : " + String(PressureTend, 1)); // tendency over last 3 hours in hectopascals
-  Serial.println("Preciptation (Now)       : " + String(Preciptation, 1)); // over last hour in inches
-  Serial.println("Preciptation (3hrs)      : " + String(Preciptation3hr, 1)); // over last 3-hours in inches
-  Serial.println("Preciptation (6hrs)      : " + String(Preciptation6hr, 1)); // over last 6-hours in inches
-  Serial.println("Preciptation (24hrs)     : " + String(Preciptation24hr, 1)); // over last 24-hours in inches
-  Serial.println("Snow                     : " + String(Snow, 1)); // snow depth in inches
+  Serial.println("Pressure Tendency        : " + String(PressureTend, 1));      // tendency over last 3 hours in hectopascals
+  Serial.println("Preciptation (Now)       : " + String(Preciptation, 1));      // over last hour in inches
+  Serial.println("Preciptation (3hrs)      : " + String(Preciptation3hr, 1));   // over last 3-hours in inches
+  Serial.println("Preciptation (6hrs)      : " + String(Preciptation6hr, 1));   // over last 6-hours in inches
+  Serial.println("Preciptation (24hrs)     : " + String(Preciptation24hr, 1));  // over last 24-hours in inches
+  Serial.println("Snow                     : " + String(Snow, 1));              // snow depth in inches
   Serial.println("Metar type               : " + MessageType);
   Serial.println("Raw Metar                : " + RawMetar);
-  Serial.println("Latitude                 : " + String(Latitude, 1));  // in degrees
-  Serial.println("Longitude                : " + String(Longitude, 1)); // in degrees
-  Serial.println("Elevation                : " + String(Elevation)); // in metres
-  Serial.println("VFR                      : " + VFR); // light category restriction
+  Serial.println("Latitude                 : " + String(Latitude, 1));   // in degrees
+  Serial.println("Longitude                : " + String(Longitude, 1));  // in degrees
+  Serial.println("Elevation                : " + String(Elevation));     // in metres
+  Serial.println("VFR                      : " + VFR);                   // light category restriction
   Serial.println("Station Mode             : " + StationMode);
 //==================================================================
   String cloudcover[5] = {};
