@@ -78,6 +78,8 @@ const int diameter = 41;  // Size of the compass
 
 void setup() {
   Serial.begin(115200);
+  delay(200);
+  Serial.println(__FILE__);
   tft.begin();
   tft.setRotation(3);
   clear_screen();
