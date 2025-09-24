@@ -240,7 +240,7 @@ bool display_metar(String metar) {
   // WindDir could also be 21010KT 180V240  if veering
   String Veering = "";
   int WindVeerStart, WindVeerEnd;
-  if (RawMetar.indexOf("V") > 15  && !(RawMetar.indexOf("VRB")) && !(RawMetar.indexOf("OVC"))) {
+  if ((RawMetar.indexOf("V") > 15) && (RawMetar.indexOf("VRB") < 0) && (RawMetar.indexOf("OVC") < 0)) {
     Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4); // To avoid station names with a 'V' in them
   }
   Serial.println(RawMetar.indexOf("VRB"));
