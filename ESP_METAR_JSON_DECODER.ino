@@ -24,7 +24,6 @@ String version_num = "METAR ESP Version 1.0";
 #ifdef ESP32
 #include <WiFi.h>
 #include "HTTPClient.h"
-#include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson needs version v6 or above
 #define CS 17             // ESP32 GPIO 17 goes to TFT CS
 #define DC 16             // ESP32 GPIO 16 goes to TFT DC
 #define MOSI 23           // ESP32 GPIO 23 goes to TFT MOSI
@@ -49,6 +48,7 @@ String version_num = "METAR ESP Version 1.0";
 #endif
 
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson needs version v6 or above
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
@@ -114,10 +114,15 @@ void GET_METAR(String station, String Name) {  //client function to send/receive
   // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
   // https://aviationweather.gov/api/data/metar?format=json&hours=0&ids=EGLL&hoursBeforeNow=1
   const char* host = "https://aviationweather.gov";
-  String uri = String(host) + "/api/data/metar?format=json&ids=" + station + "&hoursBeforeNow=1";
+  String url = String(host) + "/api/data/metar?format=json&ids=" + station + "&hoursBeforeNow=1";
   Serial.println("Connected, Requesting data for : " + Name);
   HTTPClient http;
-  http.begin(uri.c_str());    // Specify the URL and maybe a certificate
+  #ifdef ESP32
+  http.begin(url.c_str());    // Specify the URL and maybe a certificate
+  #else
+    WiFiClient client;
+    http.begin(client, url);    // Specify the URL and maybe a certificate
+  #endif
   int httpCode = http.GET();  // Start connection and send HTTP header
   Serial.println("Connection status: " + String(httpCode > 0 ? "Connected" : "Connection Error"));
   if (httpCode > 0) {  // HTTP header has been sent and Server response header has been handled
@@ -235,7 +240,10 @@ bool display_metar(String metar) {
   // WindDir could also be 21010KT 180V240  if veering
   String Veering = "";
   int WindVeerStart, WindVeerEnd;
-  if (RawMetar.indexOf("V") > 15) Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4); // To avoid station names with a 'V' in them
+  if (RawMetar.indexOf("V") > 15  && RawMetar.indexOf("VRB") == -1 && RawMetar.indexOf("OVC") == -1) {
+    Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4); // To avoid station names with a 'V' in them
+  }
+  Serial.println(RawMetar.indexOf("VRB"));
   if (Veering != "") {
     WindVeerStart = Veering.substring(0, 3).toInt();
     WindVeerEnd = Veering.substring(4, 7).toInt();
