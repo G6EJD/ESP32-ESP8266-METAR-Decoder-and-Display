@@ -19,23 +19,46 @@
   See more at http://www.dsbird.org.uk
 
 */
+/*  Revised METAR Decoder and display for ESP8266/ESP32 and ILI9341 TFT screen
+  Now based on a JSON formated Metar and incorporates the recent API changes 
+
+  This software, the ideas and concepts is Copyright (c) David Bird 2025. All rights to this software are reserved.
+
+  Any redistribution or reproduction of any part or all of the contents in any form is prohibited other than the following:
+  1. You may print or download to a local hard disk extracts for your personal and non-commercial use only.
+  2. You may copy the content to individual third parties for their personal use, but only if you acknowledge the author David Bird as the source of the material.
+  3. You may not, except with my express written permission, distribute or commercially exploit the content.
+  4. You may not transmit it or store it in any other website or other form of electronic retrieval system for commercial purposes.
+
+  The above copyright ('as annotated') notice and this permission notice shall be included in all copies or substantial portions of the Software and where the
+  software use is visible to an end-user.
+
+  THE SOFTWARE IS PROVIDED "AS IS" FOR PRIVATE USE ONLY, IT IS NOT FOR COMMERCIAL USE IN WHOLE OR PART OR CONCEPT. FOR PERSONAL USE IT IS SUPPLIED WITHOUT WARRANTY
+  OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  See more at http://www.dsbird.org.uk
+
+*/
 ////////////////////////////////////////////////////////////////////////////////////
 String version_num = "METAR ESP Version 1.0";
 #ifdef ESP32
 #include <WiFi.h>
 #include "HTTPClient.h"
-#define CS 17             // ESP32 GPIO 17 goes to TFT CS
-#define DC 16             // ESP32 GPIO 16 goes to TFT DC
-#define MOSI 23           // ESP32 GPIO 23 goes to TFT MOSI
-#define SCLK 18           // ESP32 GPIO 18 goes to TFT SCK/CLK
-#define RST 5             // ESP32 GPIO  5 ESP RST to TFT RESET
-#define MISO              // Not connected
+#define CS 17    // ESP32 GPIO 17 goes to TFT CS
+#define DC 16    // ESP32 GPIO 16 goes to TFT DC
+#define MOSI 23  // ESP32 GPIO 23 goes to TFT MOSI
+#define SCLK 18  // ESP32 GPIO 18 goes to TFT SCK/CLK
+#define RST 5    // ESP32 GPIO  5 ESP RST to TFT RESET
+#define MISO     // Not connected
 //      3.3V     // Goes to TFT LED
 //      5v       // Goes to TFT Vcc
 //      Gnd      // Goes to TFT Gnd
 #else
 #include <ESP8266WiFi.h>
 #include "ESP8266HTTPClient.h"
+#include <WiFiCLient.h>
+#include <WiFiClientSecureBearSSL.h>
 #define CS D0    // Wemos D1 Mini D0 goes to TFT CS
 #define DC D8    // Wemos D1 Mini D8 goes to TFT DC
 #define MOSI D7  // Wemos D1 Mini D7 goes to TFT MOSI
@@ -47,20 +70,21 @@ String version_num = "METAR ESP Version 1.0";
 //      Gnd     // Goes to TFT Gnd
 #endif
 
-#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson needs version v6 or above
+#include <WiFiClientSecure.h>
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
 
+WiFiClientSecure client;
+HTTPClient http;
+
 // Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS, DC);
 
-const char* ssid = "your WiFi SSID";
-const char* password = "your WiFi PASSWORD";
+const char* ssid = "yourSSID";
+const char* password = "yourPASSWORD";
 const int httpsPort = 443;
-
-WiFiClientSecure client;
 
 const int centreX = 274;  // Location of the compass display on screen
 const int centreY = 60;
@@ -113,16 +137,11 @@ void GET_METAR(String station, String Name) {  //client function to send/receive
   display_item(90, 135, "for " + station, GREEN, 3);
   // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
   // https://aviationweather.gov/api/data/metar?format=json&hours=0&ids=EGLL&hoursBeforeNow=1
-  const char* host = "https://aviationweather.gov";
-  String url = String(host) + "/api/data/metar?format=json&ids=" + station + "&hoursBeforeNow=1";
+  // Test Link: https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=NULL,KCHA,KRMG,KVPC,KATL,KLAL,KGOV,KPLN,KSDF,KDTW,KMYR,CYDC,EGLL
+  String url = "https://aviationweather.gov/api/data/metar?format=json&ids=" + station + "&hoursBeforeNow=1";
   Serial.println("Connected, Requesting data for : " + Name);
-  HTTPClient http;
-  #ifdef ESP32
+#ifdef ESP32
   http.begin(url.c_str());    // Specify the URL and maybe a certificate
-  #else
-    WiFiClient client;
-    http.begin(client, url);    // Specify the URL and maybe a certificate
-  #endif
   int httpCode = http.GET();  // Start connection and send HTTP header
   Serial.println("Connection status: " + String(httpCode > 0 ? "Connected" : "Connection Error"));
   if (httpCode > 0) {  // HTTP header has been sent and Server response header has been handled
@@ -134,9 +153,23 @@ void GET_METAR(String station, String Name) {  //client function to send/receive
     Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     metar_status = false;
     metar = "Station off-air";
+    client.stop();
   }
+#else
+  std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+  client->setInsecure();  // Ignore SSL certificate validation
+  HTTPClient http;        //create an HTTPClient instance
+  Serial.print("[HTTP] begin...\n");
+  if (http.begin(*client, url)) {  // HTTPS
+    Serial.print("[HTTP] GET...\n");
+    int httpCode = http.GET();  // Start connection and send HTTP header
+    if (httpCode == HTTP_CODE_OK) metar = http.getString();
+    http.end();
+  } else {
+    Serial.printf("[HTTP] Unable to connect\n");
+  }
+#endif
   display_item(265, 230, "Connected", RED, 1);
-  client.stop();
   //clear_screen();  // Clear screen
   display_item(265, 230, "Connected", RED, 1);
   display_item(0, 230, version_num, GREEN, 1);
@@ -199,36 +232,36 @@ bool display_metar(String metar) {
   // ##############################################################################
   // decode the metar data, some may be missing depending on station report
   JsonObject root_0 = doc[0];
-  String StationId = root_0["icaoId"];  // "EGLL"
-  String StationName = root_0["name"];  // "London/Heathrow Intl, EN, GB"
+  String StationId = root_0["icaoId"];         // "EGLL"
+  String StationName = root_0["name"];         // "London/Heathrow Intl, EN, GB"
   String ReceiptTime = root_0["receiptTime"];  // "2025-09-21T18:54:12.948Z"
-  int obsTime = root_0["obsTime"];  // 1758480600
-  float Temperature = root_0["temp"];  // 13
-  float DewPoint = root_0["dewp"];  // 2
-  float WindDir = root_0["wdir"];  // 30
-  float WindSpeed = root_0["wspd"];  // 6
-  float WindGustSpeed = root_0["wgst"]; // 12
-  String Visibility = root_0["visib"];  // "6+" in kts
-  float Altimeter = root_0["altim"];         // 1022
-  float SeaLevelPressure = root_0["slp"];  // 1017.3
+  int obsTime = root_0["obsTime"];             // 1758480600
+  int Temperature = root_0["temp"];          // 13
+  float DewPoint = root_0["dewp"];             // 2
+  String WindDir = root_0["wdir"];             // 30
+  int WindSpeed = root_0["wspd"];              // 6
+  float WindGustSpeed = root_0["wgst"];        // 12
+  String Visibility = root_0["visib"];         // "6+" in kts
+  int Altimeter = root_0["altim"];           // 1022
+  float SeaLevelPressure = root_0["slp"];      // 1017.3
   float PressureTend = root_0["presTend"];
-  String WxString = root_0["WxString"]; // -RA 
-  float MaxTemp = root_0["maxT"];  // 13
-  float MinTemp = root_0["minT"];  // 2
-  float MaxTemp24 = root_0["maxT24"];  // 13
-  float MinTemp24 = root_0["minT24"];  // 2
-  float Preciptation = root_0["precip"]; // 0.01
-  float Preciptation3hr  = root_0["pcp3hr"];  // 0.01
-  float Preciptation6hr  = root_0["pcp6hr"];  // 0.11
-  float Preciptation24hr = root_0["pcp24hr"]; // 0.53
-  float Snow = root_0["snow"];  // 0.1
-  float VerticalVis = root_0["vertVis"];  // 0.1
-  String MessageType = root_0["metarType"];  // "METAR"
-  String RawMetar = root_0["rawOb"];  // "METAR EGLL 211850Z AUTO 03006KT 340V060 9999 NCD 13/02 ...
-  float Latitude = root_0["lat"];  // 51.477
-  float Longitude = root_0["lon"];  // -0.461
-  float Elevation = root_0["elev"];  // 26
-  String VFR = root_0["fltCat"]; // light category restriction
+  String WxString = root_0["WxString"];        // -RA
+  float MaxTemp = root_0["maxT"];              // 13
+  float MinTemp = root_0["minT"];              // 2
+  float MaxTemp24 = root_0["maxT24"];          // 13
+  float MinTemp24 = root_0["minT24"];          // 2
+  float Preciptation = root_0["precip"];       // 0.01
+  float Preciptation3hr = root_0["pcp3hr"];    // 0.01
+  float Preciptation6hr = root_0["pcp6hr"];    // 0.11
+  float Preciptation24hr = root_0["pcp24hr"];  // 0.53
+  float Snow = root_0["snow"];                 // 0.1
+  float VerticalVis = root_0["vertVis"];       // 0.1
+  String MessageType = root_0["metarType"];    // "METAR"
+  String RawMetar = root_0["rawOb"];           // "METAR EGLL 211850Z AUTO 03006KT 340V060 9999 NCD 13/02 ...
+  float Latitude = root_0["lat"];              // 51.477
+  float Longitude = root_0["lon"];             // -0.461
+  float Elevation = root_0["elev"];            // 26
+  String VFR = root_0["fltCat"];               // light category restriction
   int QualityLevel = root_0["qcfield"];
   String StationMode = "MANUAL";
   if (RawMetar.indexOf("AUTO") >= 0) StationMode = "AUTO";
@@ -240,10 +273,9 @@ bool display_metar(String metar) {
   // WindDir could also be 21010KT 180V240  if veering
   String Veering = "";
   int WindVeerStart, WindVeerEnd;
-  if ((RawMetar.indexOf("V") > 15) && (RawMetar.indexOf("VRB") < 0) && (RawMetar.indexOf("OVC") < 0)) {
-    Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4); // To avoid station names with a 'V' in them
+  if ((RawMetar.indexOf("V") > 15) && (RawMetar.indexOf("VRB") < 0) && (RawMetar.indexOf("OVC") < 0) && (RawMetar.indexOf("CAVOK") < 0)) {
+    Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4);  // To avoid station names with a 'V' in them, and OVC and CAVOK terms
   }
-  Serial.println(RawMetar.indexOf("VRB"));
   if (Veering != "") {
     WindVeerStart = Veering.substring(0, 3).toInt();
     WindVeerEnd = Veering.substring(4, 7).toInt();
@@ -255,19 +287,19 @@ bool display_metar(String metar) {
   Serial.println("Time                     : " + ReceiptTime);
   Serial.println("Observation Time         : " + String(obsTime));
   Serial.println("Receipt Time             : " + ReceiptTime);
-  Serial.println("Temperature              : " + String(Temperature, 1));    // in Celcius
-  Serial.println("Maximum Temperature      : " + String(MaxTemp, 1));        // in Celcius
-  Serial.println("Minimum Temperature      : " + String(MinTemp, 1));        // in Celcius
-  Serial.println("Maximum 24hr Temperature : " + String(MaxTemp24, 1));      // in Celcius
-  Serial.println("Minimum 24hr Temperature : " + String(MinTemp24, 1));      // in Celcius
-  Serial.println("Dew Point                : " + String(DewPoint, 1));       // in Celcius
-  Serial.println("Wind Direction           : " + String(winddir));           // in degrees
-  if (Veering != ""){
-    Serial.println("Wind Veering Dir Start   : " + String(WindVeerStart));     // in degrees
-    Serial.println("Wind Veering Dir End     : " + String(WindVeerEnd));       // in degrees
+  Serial.println("Temperature              : " + String(Temperature));  // in Celcius
+  Serial.println("Maximum Temperature      : " + String(MaxTemp, 1));      // in Celcius
+  Serial.println("Minimum Temperature      : " + String(MinTemp, 1));      // in Celcius
+  Serial.println("Maximum 24hr Temperature : " + String(MaxTemp24, 1));    // in Celcius
+  Serial.println("Minimum 24hr Temperature : " + String(MinTemp24, 1));    // in Celcius
+  Serial.println("Dew Point                : " + String(DewPoint, 1));     // in Celcius
+  Serial.println("Wind Direction           : " + String(winddir));         // in degrees
+  if (Veering != "") {
+    Serial.println("Wind Veering Dir Start   : " + String(WindVeerStart));  // in degrees
+    Serial.println("Wind Veering Dir End     : " + String(WindVeerEnd));    // in degrees
   }
-  Serial.println("Windspeed                : " + String(WindSpeed));         // in knots
-  Serial.println("Wind Gust Speed          : " + String(WindGustSpeed, 1));  // in knots
+  Serial.println("Windspeed                : " + String(WindSpeed));            // in knots
+  Serial.println("Wind Gust Speed          : " + String(WindGustSpeed, 1));     // in knots
   Serial.println("Visibility               : " + String(Visibility));           // in statute Miles
   Serial.println("Vertical Visibility      : " + String(VerticalVis));          // in statute Miles
   Serial.println("Altimeter                : " + String(Altimeter));            //  // in hectopascals
@@ -287,7 +319,7 @@ bool display_metar(String metar) {
   Serial.println("Elevation                : " + String(Elevation));     // in metres
   Serial.println("VFR                      : " + VFR);                   // light category restriction
   Serial.println("Station Mode             : " + StationMode);
-//==================================================================
+  //==================================================================
   String cloudcover[5] = {};
   String cloudbase[5] = {};
   const char* root_0_cover = root_0["cover"];  // "SCT"
@@ -302,12 +334,9 @@ bool display_metar(String metar) {
     cnt++;
   }
   for (int i = 0; i < cnt; i++) {
-  Serial.println("Cloud cover / Base       : " + cloudcover[i] + ", Cloud base : " + cloudbase[i]);
+    Serial.println("Cloud cover / Base       : " + cloudcover[i] + ", Cloud base : " + cloudbase[i]);
   }
-
-// There is no Veering report in the metar now in TAF
-// There is no Gusting report in the metar now in TAF
-// #####################################################################################
+  // #####################################################################################
   // "2025-09-21T18:54:12.948Z"
   Serial.println(ReceiptTime);
   display_item(0, 0, "Date:" + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16), GREEN, 2);  // Date-time
@@ -315,23 +344,39 @@ bool display_metar(String metar) {
   //----------------------------------------------------------------------------------------------------
   // Process any reported wind direction and speed e.g. 270019KTS means direction is 270 deg and speed 19Kts
   // radians = (degrees * 71) / 4068 from Pi/180 to convert to degrees
-  Draw_Compass_Rose();  // Draw compass rose
-  float wind_speedKTS = WindSpeed; // default wind speed is in Knots
+  Draw_Compass_Rose();        // Draw compass rose
+  float wind_speedKTS = WindSpeed;  // default wind speed is in Knots
   float wind_speedMPH = WindSpeed * 1.15077945;
   float wind_speedKPH = WindSpeed * 1.852;
-  if (wind_speedMPH < 10) display_item((centreX - 28), (centreY + 50), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
+  if (wind_speedMPH < 10) display_item((centreX - 40), (centreY + 70), (String(wind_speedMPH, 0) + " MPH"), YELLOW, 2);
   else {
-    display_item((centreX - 35), (centreY + 50), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
-    if (wind_speedMPH >= 18) display_item((centreX - 35), (centreY + 50), (String(wind_speedMPH) + " MPH"), RED, 2);
+    if (wind_speedMPH >= 18) display_item((centreX - 45), (centreY + 70), (String(wind_speedMPH, 0) + " MPH"), RED, 2);
+    else display_item((centreX - 45), (centreY + 70), (String(wind_speedMPH, 0) + " MPH"), YELLOW, 2);
+  }
+  if (WindDir.startsWith("VRB")) {
+    display_item((centreX - 17), (centreY - 7), "VRB", YELLOW, 2);
+  } else {
+    winddir = winddir - 90;
+    int dx = (diameter * cos((winddir)*0.017444)) + centreX;
+    int dy = (diameter * sin((winddir)*0.017444)) + centreY;
+    arrow(dx, dy, centreX, centreY, 5, 5, YELLOW);  // u8g.drawLine(centreX,centreY,dx,dy); would be the u8g drawing equivalent
+  }
+  if (WindDir != "CAVOK" && Veering != "") {  // Check for variable wind direction
+    // Minimum angle is either ABS(AngleA- AngleB) or (360-ABS(AngleA-AngleB))
+    int veering = min_val(360 - abs(WindVeerStart - WindVeerEnd), abs(WindVeerStart - WindVeerEnd));
+    display_item((centreX - 207), (centreY + 65), "V " + String(veering) + char(247), RED, 2);
+    display_item((centreX - 60), (centreY + 65), "v", RED, 2);  // Signify 'Variable wind direction
+    draw_veering_arrow(WindVeerStart);
+    draw_veering_arrow(WindVeerEnd);
   }
   //----------------------------------------------------------------------------------------------------
   // Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
   tft.drawLine(0, 40, 229, 40, YELLOW);
   //  Serial.println("Cloud cover / Base       : " + cloudcover[i] + ", Cloud base : " + cloudbase[i]);
-  display_item(0, 45, cloudcover[0] + cloudbase[0], WHITE, 1);
-  display_item(0, 55, convert_clouds(cloudcover[1]), WHITE, 1);
-  display_item(0, 65, convert_clouds(cloudcover[2]), WHITE, 1);
-  display_item(0, 75, convert_clouds(cloudcover[2]), WHITE, 1);
+  display_item(0, 35, convertClouds("", cloudcover[0], cloudbase[0].toInt()), WHITE, 2);
+  display_item(0, 55, convertClouds("", cloudcover[1], cloudbase[1].toInt()), WHITE, 2);
+  display_item(0, 75, convertClouds("", cloudcover[2], cloudbase[2].toInt()), WHITE, 2);
+  display_item(0, 95, convertClouds("", cloudcover[3], cloudbase[3].toInt()), WHITE, 2);
   //----------------------------------------------------------------------------------------------------
   display_item(0, 110, " Temp " + String(Temperature) + char(247) + "C", CYAN, 2);
   //----------------------------------------------------------------------------------------------------
@@ -363,46 +408,20 @@ bool display_metar(String metar) {
 }
 // finished decoding the METAR string
 //----------------------------------------------------------------------------------------------------
-
-String convert_clouds(String source) {
-  String height = source.substring(3, 6);
-  String cloud = source.substring(0, 3);
+String convertClouds(String source, String cloud, int height) {
   String warning = " ";
-  while (height.startsWith("0")) {
-    height = height.substring(1);  // trim leading '0'
-  }
   if (source.endsWith("TCU") || source.endsWith("CB")) {
-    display_item(0, 95, "Warning - storm clouds detected", WHITE, 1);
+    display_item(5, 108, "Warning - storm clouds detected", WHITE, 1);
     warning = " (storm) ";
   }
-  // 'adjust offset if 0 replaced by space
-  if (cloud != "SKC" && cloud != "CLR" && height != " ") {
-    height = " at " + height + "00ft";
-  } else height = "";
-  if (source == "VV///") {
-    return "No cloud reported";
-  }
-  if (cloud == "BKN") {
-    return "Broken" + warning + "clouds" + height;
-  }
-  if (cloud == "SKC") {
-    return "Clear skies";
-  }
-  if (cloud == "FEW") {
-    return "Few" + warning + "clouds" + height;
-  }
-  if (cloud == "NCD") {
-    return "No clouds detected";
-  }
-  if (cloud == "NSC") {
-    return "No signficiant clouds";
-  }
-  if (cloud == "OVC") {
-    return "Overcast" + warning + height;
-  }
-  if (cloud == "SCT") {
-    return "Scattered" + warning + "clouds" + height;
-  }
+  if (source == "VV///") return "No cloud reported";
+  if (cloud == "BKN") return "Broken" + warning + "clouds " + String(height) + "ft";
+  if (cloud == "SKC") return "Clear skies";
+  if (cloud == "FEW") return "Few" + warning + "clouds " + String(height) + "ft";
+  if (cloud == "NCD") return "No clouds detected";
+  if (cloud == "NSC") return "No signficiant clouds ";
+  if (cloud == "OVC") return "Overcast" + warning + String(height) + "ft";
+  if (cloud == "SCT") return "Scattered" + warning + "clouds " + String(height) + "ft";
   return "";
 }
 
@@ -686,79 +705,4 @@ void display_progress(String title, int percent) {
 
   e.g. -SHRA - Light showers of rain
   TSRA - Thunderstorms and rain.
-*/
-
-
-
-/* Returns the following METAR data from the server address
-  <?xml version="1.0" encoding="UTF-8"?>
-  -<response xsi:noNamespaceSchemaLocation="http://aviationweather.gov/adds/schema/metar1_2.xsd" version="1.2" xmlns:xsi="http://www.w3.org/2001/XML-Schema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <request_index>18793217</request_index>
-  <data_source name="metars"/>
-  <request type="retrieve"/>
-  <errors/>
-  <warnings/>
-  <time_taken_ms>4</time_taken_ms>
-  -<data num_results="2">
-  -<METAR>
-  <raw_text>EGLL 241950Z AUTO 07009KT 9999 NCD 03/M02 Q1023</raw_text>
-  <station_id>EGLL</station_id>
-  <observation_time>2018-02-24T19:50:00Z</observation_time>
-  <latitude>51.48</latitude>
-  <longitude>-0.45</longitude>
-  <temp_c>3.0</temp_c>
-  <dewpoint_c>-2.0</dewpoint_c>
-  <wind_dir_degrees>70</wind_dir_degrees>
-  <wind_speed_kt>9</wind_speed_kt>
-  <visibility_statute_mi>6.21</visibility_statute_mi>
-  <altim_in_hg>30.206694</altim_in_hg>
-  -<quality_control_flags>
-  <auto>TRUE</auto>
-  </quality_control_flags>
-  <sky_condition sky_cover="CLR"/>
-  <flight_category>VFR</flight_category>
-  <metar_type>METAR</metar_type>
-  <elevation_m>24.0</elevation_m>
-  </METAR>
-  -<METAR>
-  <raw_text>EGLL 241920Z AUTO 07008KT 9999 NCD 03/M03 Q1023</raw_text>
-  <station_id>EGLL</station_id>
-  <observation_time>2018-02-24T19:20:00Z</observation_time>
-  <latitude>51.48</latitude>
-  <longitude>-0.45</longitude>
-  <temp_c>3.0</temp_c>
-  <dewpoint_c>-3.0</dewpoint_c>
-  <wind_dir_degrees>70</wind_dir_degrees>
-  <wind_speed_kt>8</wind_speed_kt>
-  <visibility_statute_mi>6.21</visibility_statute_mi>
-  <altim_in_hg>30.206694</altim_in_hg>
-  -<quality_control_flags>
-  <auto>TRUE</auto>
-  </quality_control_flags>
-  <sky_condition sky_cover="CLR"/>
-  <flight_category>VFR</flight_category>
-  <metar_type>METAR</metar_type>
-  <elevation_m>24.0</elevation_m>
-  </METAR>
-  </data>
-  </response>
-  <METAR>
-  <raw_text>EGDM 121621Z 35005KT 9999 5000SW BR FEW001 BKN002 11/11 Q1014 AMB</raw_text>
-  <station_id>EGDM</station_id>
-  <observation_time>2016-11-12T16:21:00Z</observation_time>
-  <latitude>51.17</latitude>
-  <longitude>-1.75</longitude>
-  <temp_c>11.0</temp_c>
-  <dewpoint_c>11.0</dewpoint_c>
-  <wind_dir_degrees>350</wind_dir_degrees>
-  <wind_speed_kt>5</wind_speed_kt>
-  <visibility_statute_mi>6.21</visibility_statute_mi>
-  <altim_in_hg>29.940945</altim_in_hg>
-  <wx_string>BR</wx_string>
-  <sky_condition sky_cover="FEW" cloud_base_ft_agl="100" />
-  <sky_condition sky_cover="BKN" cloud_base_ft_agl="200" />
-  <flight_category>LIFR</flight_category>
-  <metar_type>METAR</metar_type>
-  <elevation_m>124.0</elevation_m>
-  </METAR>
 */
