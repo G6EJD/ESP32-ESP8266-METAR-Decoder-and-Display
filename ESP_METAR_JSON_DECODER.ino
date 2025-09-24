@@ -240,7 +240,7 @@ bool display_metar(String metar) {
   // WindDir could also be 21010KT 180V240  if veering
   String Veering = "";
   int WindVeerStart, WindVeerEnd;
-  if (RawMetar.indexOf("V") > 15  && RawMetar.indexOf("VRB") == -1 && RawMetar.indexOf("OVC") == -1) {
+  if (RawMetar.indexOf("V") > 15  && !(RawMetar.indexOf("VRB")) && !(RawMetar.indexOf("OVC"))) {
     Veering = RawMetar.substring(RawMetar.indexOf("V") - 3, RawMetar.indexOf("V") + 4); // To avoid station names with a 'V' in them
   }
   Serial.println(RawMetar.indexOf("VRB"));
@@ -312,20 +312,14 @@ bool display_metar(String metar) {
   Serial.println(ReceiptTime);
   display_item(0, 0, "Date:" + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16), GREEN, 2);  // Date-time
   Serial.println("Date                     : " + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16));
-  float wind_speedMPH = 0;
-  float wind_speedKPH = 0;
-  float wind_speedKTS = 0;
   //----------------------------------------------------------------------------------------------------
   // Process any reported wind direction and speed e.g. 270019KTS means direction is 270 deg and speed 19Kts
   // radians = (degrees * 71) / 4068 from Pi/180 to convert to degrees
   Draw_Compass_Rose();  // Draw compass rose
-  wind_speedKTS = WindSpeed; // default wind speed is in Knots
-  wind_speedMPH = WindSpeed * 1.15077945;
-  wind_speedKPH = WindSpeed * 1.852;
-  //Serial.println("KTS=" + String(wind_speedKTS));
-  //Serial.println("MPH=" + String(wind_speedMPH));
-  //Serial.println("KPH=" + String(wind_speedKPH));
-   if (wind_speedMPH < 10) display_item((centreX - 28), (centreY + 50), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
+  float wind_speedKTS = WindSpeed; // default wind speed is in Knots
+  float wind_speedMPH = WindSpeed * 1.15077945;
+  float wind_speedKPH = WindSpeed * 1.852;
+  if (wind_speedMPH < 10) display_item((centreX - 28), (centreY + 50), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
   else {
     display_item((centreX - 35), (centreY + 50), (String(wind_speedMPH) + " MPH"), YELLOW, 2);
     if (wind_speedMPH >= 18) display_item((centreX - 35), (centreY + 50), (String(wind_speedMPH) + " MPH"), RED, 2);
