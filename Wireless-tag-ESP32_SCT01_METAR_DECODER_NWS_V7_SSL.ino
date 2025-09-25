@@ -61,18 +61,18 @@ String version_num = "METAR ESP Version 1.0";
 // #define LGFX_WYWY_ESP32S3_HMI_DEVKIT       // wywy ESP32S3 HMI DevKit
 // #define LGFX_SUNTON_ESP32_2432S028         // Sunton ESP32 2432S028
 
-#define LGFX_AUTODETECT  // 自動認識 (D-duino-32 XS, WT32-SC01, PyBadge はパネルID読取りが出来ないため自動認識の対象から外れています)
+#define LGFX_AUTODETECT
 #include <LovyanGFX.hpp>
-#include <LGFX_AUTODETECT.hpp>  // クラス"LGFX"を準備します
+#include <LGFX_AUTODETECT.hpp>
 
-static LGFX lcd;  // LGFXのインスタンスを作成。
+static LGFX lcd;
 
 #include <WiFiClientSecure.h>
 #include "HTTPClient.h"
-#include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson needs version v6 or above
+#include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson needs version v7 or above
 
-const char* ssid = "yourWiFiSSID";
-const char* password = "yourPASSWORDforWiFi";
+const char* ssid = "yourWiFISSID";
+const char* password = "yourWiFiPASSWORD";
 const int httpsPort = 443;
 
 WiFiClientSecure client;
@@ -91,7 +91,7 @@ const int diameter = 60;  // Size of the compass
 #define YELLOW 0xFFE0
 #define WHITE 0xFFFF
 
-#define timeDelay 10000
+#define timeDelay 15000
 
 void setup() {
   Serial.begin(115200);
@@ -111,6 +111,7 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\nWiFi connected at: " + WiFi.localIP().toString());
+  delay(2000);
   display_status();
 }
 
@@ -322,16 +323,16 @@ bool display_metar(String metar) {
   for (int i = 0; i < cnt; i++) {
     Serial.println("Cloud cover / Base       : " + cloudcover[i] + ", Cloud base : " + cloudbase[i]);
   }
-
-  // There is no Veering report in the metar now in TAF
-  // There is no Gusting report in the metar now in TAF
   // #####################################################################################
   // "2025-09-21T18:54:12.948Z"
   int lineLength = 75;
   if (RawMetar.length() > lineLength) {
     display_item(5, 280, RawMetar.substring(0, lineLength), YELLOW, 1);
-    display_item(5, 290, RawMetar.substring(lineLength), YELLOW, 1);
-  } else display_item(5, 280, RawMetar, YELLOW, 1);
+    String Line2 = RawMetar.substring(lineLength);
+    Line2.trim();
+    display_item(5, 290, Line2, YELLOW, 1);
+  }
+  else display_item(5, 280, RawMetar, YELLOW, 1);
   display_item(5, 0, "Date:" + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16), GREEN, 2);  // Date-time
   Serial.println("Date                     : " + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16));
   lcd.drawLine(0, 20, 345, 20, YELLOW);
@@ -374,6 +375,7 @@ bool display_metar(String metar) {
   if (cloudbase[0].toInt() > 0) display_item(235, 35, String(cloudbase[0].toInt()) + " ft", WHITE, 2);
   if (cloudbase[2].toInt() > 0) display_item(235, 75, String(cloudbase[2].toInt()) + " ft", WHITE, 2);
   if (cloudbase[3].toInt() > 0) display_item(235, 95, String(cloudbase[3].toInt()) + " ft", WHITE, 2);
+  if (SkyCondition == "CLR") display_item(5, 35, "No Clouds Detected", WHITE, 2);
   //----------------------------------------------------------------------------------------------------
   display_item(5, 145, " Temp " + String(Temperature, 0) + char(247) + "C", CYAN, 2);
   //----------------------------------------------------------------------------------------------------
@@ -420,12 +422,17 @@ bool display_metar(String metar) {
   }
   Report = display_conditions(WxString) + Intensity;
   display_item(150, 205, Report, YELLOW, 2);
-  display_item(150, 225, "Wx : " + WxString, YELLOW, 2);
+  if (WxString == "" || WxString == "null") { // No weather report, but...
+    if (RawMetar.indexOf("-RA") > 0) WxString = "Light Rain";
+    if (RawMetar.indexOf("+RA") > 0) WxString = "Heavy Rain";
+    if (RawMetar.indexOf("RA") > 0) WxString  = "Rain";
+    if (RawMetar.indexOf("NOSIG") > 0) WxString  = "No Significant Change";
+  }
+  display_item(150, 225, "Wx: " + WxString, YELLOW, 2);
   return true;
 }
 
 //----------------------------------------------------------------------------------------------------
-
 String convertClouds(String source, String cloud) {
   String warning = " ";
   if (source.endsWith("TCU") || source.endsWith("CB")) {
@@ -672,7 +679,6 @@ void display_progress(String title, int percent) {
   display_item(title_pos * 1.5, (y_pos - 20) * 1.33, title, GREEN, 2);
   lcd.drawRoundRect(x_pos * 1.5, y_pos * 1.33, bar_width + 2, bar_height, 5, YELLOW);                                // Draw progress bar outline
   lcd.fillRoundRect((x_pos + 2) * 1.5, (y_pos + 1) * 1.33, percent * bar_width / 100 - 2, bar_height - 3, 4, BLUE);  // Draw progress
-  delay(2000);
   lcd.fillRect((x_pos - 30) * 1.5, (y_pos - 20) * 1.33, 320, 16, BLACK);  // Clear titles
   lcd.startWrite();
 }
