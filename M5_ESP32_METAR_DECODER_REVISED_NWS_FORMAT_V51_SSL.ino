@@ -77,10 +77,7 @@ void GET_METAR(String station, String Name) { //client function to send/receive 
     delay(1000);
     if (!client.connect(host, httpsPort)) Serial.println("Connection failed again...");
   }
-  // http://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1 (example)
-  // https://aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=EGLL&hoursBeforeNow=1
-  // ftp://tgftp.nws.noaa.gov/data/observations/metar/decoded/EGCC.TXT
-    display_item(265,230,"Connected",RED,1);
+  display_item(265,230,"Connected",RED,1);
  // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
  // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=EGLL&hoursBeforeNow=1
     const char* host = "https://aviationweather.gov";
@@ -729,6 +726,7 @@ void display_progress (String title, int percent) {
 <elevation_m>124.0</elevation_m>
 </METAR>
 */
+
 
 
 
