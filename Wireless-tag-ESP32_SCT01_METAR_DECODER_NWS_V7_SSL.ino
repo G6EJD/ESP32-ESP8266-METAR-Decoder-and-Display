@@ -1,4 +1,4 @@
-/*  Revised METAR Decoder and display for ESP32 SCT01
+te /*  Revised METAR Decoder and display for ESP32 SCT01
   Now based on a JSON formated Metar and incorporates the recent API changes 
 
   This software, the ideas and concepts is Copyright (c) David Bird 2025. All rights to this software are reserved.
@@ -425,7 +425,7 @@ bool display_metar(String metar) {
   if (WxString == "" || WxString == "null") { // No weather report, but...
     if (RawMetar.indexOf("-RA") > 0) WxString = "Light Rain";
     if (RawMetar.indexOf("+RA") > 0) WxString = "Heavy Rain";
-    if (RawMetar.indexOf("RA") > 0) WxString  = "Rain";
+    if (RawMetar.indexOf("RA") > 0) WxString  = "Moderate Rain";
     if (RawMetar.indexOf("NOSIG") > 0) WxString  = "No Significant Change";
   }
   display_item(150, 225, "Wx: " + WxString, YELLOW, 2);
@@ -705,3 +705,4 @@ void display_progress(String title, int percent) {
   e.g. -SHRA - Light showers of rain
   TSRA - Thunderstorms and rain.
 */
+
