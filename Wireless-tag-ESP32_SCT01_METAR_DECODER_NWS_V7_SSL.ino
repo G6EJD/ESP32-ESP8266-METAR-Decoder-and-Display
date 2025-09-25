@@ -1,7 +1,7 @@
-/*  Version 7 METAR Decoder and display for ESP32 and ST7796 lcd screen
+/*  Revised METAR Decoder and display for ESP32 SCT01
+  Now based on a JSON formated Metar and incorporates the recent API changes 
 
-  This software, the ideas and concepts is Copyright (c) David Bird 2025.
-  All rights to this software are reserved.
+  This software, the ideas and concepts is Copyright (c) David Bird 2025. All rights to this software are reserved.
 
   Any redistribution or reproduction of any part or all of the contents in any form is prohibited other than the following:
   1. You may print or download to a local hard disk extracts for your personal and non-commercial use only.
@@ -71,8 +71,8 @@ static LGFX lcd;  // LGFXのインスタンスを作成。
 #include "HTTPClient.h"
 #include <ArduinoJson.h>  // https://github.com/bblanchon/ArduinoJson needs version v6 or above
 
-const char* ssid = "ORBI21";
-const char* password = "QDMSWSFMQL";
+const char* ssid = "yourWiFiSSID";
+const char* password = "yourPASSWORDforWiFi";
 const int httpsPort = 443;
 
 WiFiClientSecure client;
@@ -98,7 +98,7 @@ void setup() {
   delay(200);
   Serial.println(__FILE__);
   lcd.init();
-  lcd.setRotation(1);      // 0-3
+  lcd.setRotation(3);      // 0-3
   lcd.setBrightness(128);  // 0-255
   lcd.setColorDepth(16);   // RGB565
   //lcd.setColorDepth(24);  // RGB888の24 RGB666の18
@@ -125,59 +125,12 @@ void loop() {
   GET_METAR("EGSS", "5 EGSS Stansted");
 }
 
-//----------------------------------------------------------------------------------------------------
-void GET_METARX(String Station, String StationName) {  //client function to send/receive GET request data.
-  String metar, raw_metar;
-  bool metar_status = true;
-  display_item(35, 100, "Decoding METAR", GREEN, 3);
-  display_item(90, 135, "for " + Station, GREEN, 3);
-  // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
-  // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=EGLL&hoursBeforeNow=1
-  // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=NULL,KCHA,KRMG,KVPC,KATL,KLAL,KGOV,KPLN,KSDF,KDTW,KMYR,CYDC,EGLL test
-  const char* host = "https://aviationweather.gov";
-  String uri = String(host) + "/api/data/metar?format=xml&ids=" + Station + "&hoursBeforeNow=1";
-  Serial.println("Connected, \nRequesting data for : " + StationName);
-  HTTPClient http;
-  http.begin(uri);            // Specify the URL and certificate
-  int httpCode = http.GET();  // Start connection and send HTTP header
-  if (httpCode > 0) {         // HTTP header has been sent and Server response header has been handled
-    if (httpCode == HTTP_CODE_OK) raw_metar = http.getString();
-    http.end();
-    metar = raw_metar.substring(raw_metar.indexOf("<raw_text>", 0) + 10, raw_metar.indexOf("</raw_text>", 0));
-  } else {
-    http.end();
-    Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-    metar_status = false;
-    metar = "Station off-air";
-  }
-  display_item(265, 230, "Connected", RED, 1);
-  Serial.println(metar);
-  client.stop();
-  clear_screen();  // Clear screen
-  display_item(400, 406, "Connected", RED, 1);
-  display_item(10, 306, version_num, GREEN, 1);
-  display_item(10, 353, StationName, YELLOW, 2);
-  lcd.drawLine(0, 246, 480, 246, YELLOW);
-  display_item(10, 279, metar, YELLOW, 1);
-  if (metar_status == true) {
-    display_metar(metar);  // Now decode METAR
-    lcd.display();
-    delay(timeDelay);  // Delay for set time
-  } else {
-    display_item(105, 133, StationName, YELLOW, 2);
-    lcd.display();
-    delay(5000);  // Wait less time if station off-air
-  }
-  clear_screen();  // Clear screen before moving to next station display
-  lcd.startWrite();
-}
-
 void GET_METAR(String station, String StationName) {  //client function to send/receive GET request data.
   String metar, raw_metar;
   bool metar_status = true;
   String StationStatus;
-  display_item(35, 100, "Decoding METAR", GREEN, 3);
-  display_item(90, 135, "for " + station, GREEN, 3);
+  display_item(30, 145, "Decoding METAR for " + station, GREEN, 3);
+  delay(2000);
   // https://aviationweather.gov/api/data/stationinfo?ids=EGLL
   // https://aviationweather.gov/api/data/metar?format=json&hours=0&ids=EGLL&hoursBeforeNow=1
   // https://aviationweather.gov/api/data/metar?format=xml&hours=0&ids=NULL,KCHA,KRMG,KVPC,KATL,KLAL,KGOV,KPLN,KSDF,KDTW,KMYR,CYDC,EGLL test call
@@ -204,18 +157,17 @@ void GET_METAR(String station, String StationName) {  //client function to send/
     metar_status = false;
     StationStatus = "Station off-air";
   }
-  display_item(265, 230, "Connected", RED, 1);
   client.stop();
   clear_screen();  // Clear screen
-  display_item(320, 305, "Connected", RED, 1);
-  display_item(0, 305, version_num, GREEN, 1);
-  display_item(0, 260, StationName, YELLOW, 2);
+  display_item(415, 305, "Connected", GREEN, 1);
+  display_item(5, 305, version_num, GREEN, 1);
+  display_item(5, 260, StationName, YELLOW, 2);
   lcd.drawLine(0, 247, 480, 247, YELLOW);
   if (metar_status == true) {
     display_metar(metar);
     delay(timeDelay);  // Delay for set time
   } else {
-    display_item(70, 100, StationStatus, YELLOW, 1);  // Now decode METAR
+    display_item(100, 150, StationStatus, YELLOW, 2);  // Now decode METAR
     delay(5000);                                      // Wait less time if station off-air
   }
   clear_screen();  // Clear screen before moving to next station display
@@ -375,9 +327,12 @@ bool display_metar(String metar) {
   // There is no Gusting report in the metar now in TAF
   // #####################################################################################
   // "2025-09-21T18:54:12.948Z"
-  Serial.println(ReceiptTime);
-  display_item(0, 280, RawMetar, YELLOW, 1);
-  display_item(0, 0, "Date:" + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16), GREEN, 2);  // Date-time
+  int lineLength = 75;
+  if (RawMetar.length() > lineLength) {
+    display_item(5, 280, RawMetar.substring(0, lineLength), YELLOW, 1);
+    display_item(5, 290, RawMetar.substring(lineLength), YELLOW, 1);
+  } else display_item(5, 280, RawMetar, YELLOW, 1);
+  display_item(5, 0, "Date:" + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16), GREEN, 2);  // Date-time
   Serial.println("Date                     : " + ReceiptTime.substring(8, 10) + " @ " + ReceiptTime.substring(11, 16));
   lcd.drawLine(0, 20, 345, 20, YELLOW);
   //----------------------------------------------------------------------------------------------------
@@ -402,8 +357,8 @@ bool display_metar(String metar) {
   if (WindDir != "CAVOK" && Veering != "") {  // Check for variable wind direction
     // Minimum angle is either ABS(AngleA- AngleB) or (360-ABS(AngleA-AngleB))
     int veering = min_val(360 - abs(WindVeerStart - WindVeerEnd), abs(WindVeerStart - WindVeerEnd));
-    display_item(180, (centreY + 65), "V " + String(veering) + char(247), RED, 2);
-    display_item((centreX - 60), (centreY + 65), "v", RED, 2);  // Signify 'Variable wind direction
+    display_item(150, (centreY + 65), "V " + String(veering) + char(247), RED, 2);
+    display_item((centreX - 60), (centreY + 68), "v", RED, 2);  // Signify 'Variable wind direction
     draw_veering_arrow(WindVeerStart);
     draw_veering_arrow(WindVeerEnd);
   }
@@ -411,35 +366,35 @@ bool display_metar(String metar) {
   // Process any reported cloud cover e.g. SCT018 means Scattered clouds at 1800 ft
   lcd.drawLine(0, 137, 340, 137, YELLOW);
   // Serial.println("Cloud cover / Base       : " + cloudcover[i] + ", Cloud base : " + cloudbase[i]);
-  display_item(0, 35, convertClouds("", cloudcover[0]), WHITE, 2);
-  display_item(0, 55, convertClouds("", cloudcover[1]), WHITE, 2);
-  display_item(0, 75, convertClouds("", cloudcover[2]), WHITE, 2);
-  display_item(0, 95, convertClouds("", cloudcover[3]), WHITE, 2);
+  display_item(5, 35, convertClouds("", cloudcover[0]), WHITE, 2);
+  display_item(5, 55, convertClouds("", cloudcover[1]), WHITE, 2);
+  display_item(5, 75, convertClouds("", cloudcover[2]), WHITE, 2);
+  display_item(5, 95, convertClouds("", cloudcover[3]), WHITE, 2);
   if (cloudbase[1].toInt() > 0) display_item(235, 55, String(cloudbase[1].toInt()) + " ft", WHITE, 2);
   if (cloudbase[0].toInt() > 0) display_item(235, 35, String(cloudbase[0].toInt()) + " ft", WHITE, 2);
   if (cloudbase[2].toInt() > 0) display_item(235, 75, String(cloudbase[2].toInt()) + " ft", WHITE, 2);
   if (cloudbase[3].toInt() > 0) display_item(235, 95, String(cloudbase[3].toInt()) + " ft", WHITE, 2);
   //----------------------------------------------------------------------------------------------------
-  display_item(0, 145, " Temp " + String(Temperature, 0) + char(247) + "C", CYAN, 2);
+  display_item(5, 145, " Temp " + String(Temperature, 0) + char(247) + "C", CYAN, 2);
   //----------------------------------------------------------------------------------------------------
   lcd.drawLine(140, 139, 140, 246, YELLOW);   // Separating vertical line for relative-humidity, temp, windchill, temp-index and dewpoint
   //----------------------------------------------------------------------------------------------------
   int wind_chill = int(calc_windchill(Temperature, WindSpeed));
   if (WindSpeed > 3 && Temperature <= 14) {
-    display_item(0, 165, "WindC N/A", CYAN, 2);
-  } else display_item(0, 165, "WindC " + String(wind_chill) + char(247) + "C", CYAN, 2);
+    display_item(5, 165, "WindC N/A", CYAN, 2);
+  } else display_item(5, 165, "WindC " + String(wind_chill) + char(247) + "C", CYAN, 2);
   //----------------------------------------------------------------------------------------------------
   // Calculate and display Relative Humidity
-  display_item(0, 185, " Dewp " + String(DewPoint, 0) + char(247) + "C", CYAN, 2);
+  display_item(5, 185, " Dewp " + String(DewPoint, 0) + char(247) + "C", CYAN, 2);
   int RH = calc_rh(Temperature, DewPoint);
-  display_item(00, 205, "Rel.H " + String(RH) + "%", CYAN, 2);
+  display_item(5, 205, "Rel.H " + String(RH) + "%", CYAN, 2);
   //----------------------------------------------------------------------------------------------------
   // Don't display heatindex unless temperature > 18C
   if (Temperature >= 17) {
     float T = (Temperature * 9 / 5) + 32;
     float RHx = RH;
     int tHI = (-42.379 + (2.04901523 * T) + (10.14333127 * RHx) - (0.22475541 * T * RHx) - (0.00683783 * T * T) - (0.05481717 * RHx * RHx) + (0.00122874 * T * T * RHx) + (0.00085282 * T * RHx * RHx) - (0.00000199 * T * T * RHx * RHx) - 32) * 5 / 9;
-    display_item(0, 225, "HeatX " + String(tHI) + char(247) + "C", CYAN, 2);
+    display_item(5, 225, "HeatX " + String(tHI) + char(247) + "C", CYAN, 2);
   }
   //where   HI = -42.379 + 2.04901523*T + 10.14333127*RH - 0.22475541*T*RH - 0.00683783*T*T - 0.05481717*RH*RH + 0.00122874*T*T*RH + 0.00085282*T*RH*RH - 0.00000199*T*T*RH*RH
   //tHI = heat index (oF)
